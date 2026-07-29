@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from pathlib import Path
 
 import streamlit as st
@@ -33,14 +34,22 @@ client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 st.title("Roofing Submittal Builder")
 
 form = st.form("submittal_form")
+
 material = form.file_uploader("Material List")
 scope = form.file_uploader("Scope of Work")
+
 brand = form.selectbox(
     "Manufacturer",
     ["JM", "Carlisle", "Elevate", "GAF"],
     index=None,
     placeholder="Select a manufacturer...",
 )
+
+submittal_name = form.text_input(
+    "Submittal Filename",
+    value = "Roofing Submittal",
+)
+
 submit = form.form_submit_button("Submit")
 
 if submit:
@@ -135,9 +144,15 @@ if submit:
             else:
                 st.error(f"Missing file: {pdf_path}")
 
-        st.write(pdf_paths)
+        if not submittal_name.strip():
+            submittal_name = "Roofing Submittal"
 
-        output_path = app_directory / "submittal.pdf"
+        if not submittal_name.lower().endswith(".pdf"):
+            submittal_name += ".pdf"
+
+        temp_file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+        output_path = Path(temp_file.name)
+        temp_file.close()
 
         with st.spinner("Building submittal..."):
             build_submittal(
@@ -145,4 +160,16 @@ if submit:
                 output_path=output_path,
             )
 
+        with open(output_path, "rb") as finished_pdf:
+            pdf_data = finished_pdf.read()
+
+        output_path.unlink()
+
         st.success(f"Submittal created: {output_path}")
+
+        st.download_button(
+            label="Download Submittal",
+            data=pdf_data,
+            file_name=submittal_name,
+            mime="application/pdf",
+        )
