@@ -28,7 +28,7 @@ catalog_json = json.dumps(catalog, indent=2)
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("Roofing Submittal Builder")
 
