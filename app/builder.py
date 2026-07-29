@@ -13,10 +13,12 @@ CATEGORY_ORDER = {
 
 def build_submittal(
     pdf_paths: list[Path],
+    template_path: Path,
     output_path: Path,
 ) -> None:
 
     submittal = PdfWriter()
+    template = PdfReader(template_path)
 
     sorted_pdf_paths = sorted(
         pdf_paths,
@@ -30,11 +32,17 @@ def build_submittal(
         ),
     )
 
+    for page_index in [0, 1, 2]:
+        submittal.add_page(template.pages[page_index])
+
     for pdf_path in sorted_pdf_paths:
         reader = PdfReader(pdf_path)
 
         for page in reader.pages:
             submittal.add_page(page)
+
+    for page_index in range(3, len(template.pages)):
+        submittal.add_page(template.pages[page_index])
 
     with open(output_path, "wb") as output_file:
         submittal.write(output_file)

@@ -8,14 +8,13 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from product_catalog import load_catalog
-from validator import validate_paths
-from reconciler import reconcile_invalid_paths
 from models import SubmittalSelection
 from selection_processor import validate_and_reconcile_paths
 from builder import build_submittal
 
 app_directory = Path(__file__).resolve().parent
 product_library_root = app_directory.parent / "product_library"
+templates_root = app_directory.parent / "templates"
 
 
 @st.cache_data
@@ -58,6 +57,8 @@ if submit:
         st.error("Please upload both PDFs and select a manufacturer.")
     else:
         with st.spinner("Reading documents..."):
+
+
             material_file = client.files.create(
                 file=(material.name, material.getvalue(), "application/pdf"),
                 purpose="user_data",
@@ -106,7 +107,7 @@ if submit:
                                 "type": "input_text",
                                 "text": (
                                     "Identify the PDS documents needed for this roofing submittal."
-                                    f"Identify the selected manufacturer is {brand}."
+                                    f"The selected manufacturer is {brand}."
                                 ),
                             },
                         ],
@@ -125,6 +126,8 @@ if submit:
         validation_spinner = st.empty()
 
         with st.spinner("Validating selections..."):
+
+
             valid_paths, invalid_paths = validate_and_reconcile_paths(
                 client=client,
                 selected_paths=selected_paths,
@@ -155,8 +158,21 @@ if submit:
         temp_file.close()
 
         with st.spinner("Building submittal..."):
+
+
+            template_path = (
+                templates_root 
+                / brand.lower()
+                / "submittal_template.pdf"
+            )
+
+            if not template_path.is_file():
+                st.error(f"Missing template: {template_path}")
+                st.stop()
+
             build_submittal(
                 pdf_paths=pdf_paths,
+                template_path=template_path,
                 output_path=output_path,
             )
 
@@ -165,7 +181,7 @@ if submit:
 
         output_path.unlink()
 
-        st.success(f"Submittal created: {output_path}")
+        st.success("Submittal created successfully!")
 
         st.download_button(
             label="Download Submittal",
