@@ -1,42 +1,29 @@
+import json
 import os
+from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from typing import Literal
-from pydantic import BaseModel
-
-from pathlib import Path
 from product_catalog import load_catalog
+from validator import validate_paths
+from reconciler import reconcile_invalid_paths
+from models import SubmittalSelection
+from selection_processor import validate_and_reconcile_paths
+from builder import build_submittal
 
-import json
+app_directory = Path(__file__).resolve().parent
+product_library_root = app_directory.parent / "product_library"
+
 
 @st.cache_data
 def get_catalog():
-    return load_catalog("../product_library")
+    return load_catalog(product_library_root)
+
 
 catalog = get_catalog()
 catalog_json = json.dumps(catalog, indent=2)
-
-Folder = Literal[
-    "membrane",
-    "accessories",
-    "adhesives",
-    "fasteners_and_plates",
-    "insulation_and_coverboards",
-]
-
-
-class DocumentSelection(BaseModel):
-    filename: str
-    folder: Folder
-
-
-class SubmittalSelection(BaseModel):
-    manufacturer: str
-    roofing_system: Literal["TPO", "PVC", "EPDM"]
-    documents: list[DocumentSelection]
 
 
 load_dotenv()
@@ -58,8 +45,8 @@ submit = form.form_submit_button("Submit")
 
 if submit:
 
-    if material is None or scope is None:
-        st.error("Please upload both PDFs.")
+    if material is None or scope is None or brand is None:
+        st.error("Please upload both PDFs and select a manufacturer.")
     else:
         with st.spinner("Reading documents..."):
             material_file = client.files.create(
@@ -78,6 +65,7 @@ if submit:
                     {
                         "role": "developer",
                         "content": f"""
+
                         You select product data sheets for commercial roofing submittals.
 
                         You may select documents ONLY from this catalog:
@@ -107,14 +95,54 @@ if submit:
                             {"type": "input_file", "file_id": scope_file.id},
                             {
                                 "type": "input_text",
-                                "text": "Identify the PDS documents needed for this roofing submittal.",
+                                "text": (
+                                    "Identify the PDS documents needed for this roofing submittal."
+                                    f"Identify the selected manufacturer is {brand}."
+                                ),
                             },
                         ],
                     },
                 ],
                 text_format=SubmittalSelection,
             )
-        result = response.output_parsed
 
-        st.json(result.model_dump())
-        st.write(response.output_text)
+        result = response.output_parsed
+        # st.json(result.model_dump()) - for test
+        catalog_paths = {item["path"] for item in catalog}
+        selected_paths = [document.path for document in result.documents]
+
+        pdf_paths = []
+
+        validation_spinner = st.empty()
+
+        with st.spinner("Validating selections..."):
+            valid_paths, invalid_paths = validate_and_reconcile_paths(
+                client=client,
+                selected_paths=selected_paths,
+                catalog_paths=catalog_paths,
+                catalog_json=catalog_json,
+                material_file_id=material_file.id,
+                scope_file_id=scope_file.id,
+            )
+
+        validation_spinner.empty()
+
+        for path in valid_paths:
+            pdf_path = product_library_root / path
+
+            if pdf_path.is_file():
+                pdf_paths.append(pdf_path)
+            else:
+                st.error(f"Missing file: {pdf_path}")
+
+        st.write(pdf_paths)
+
+        output_path = app_directory / "submittal.pdf"
+
+        with st.spinner("Building submittal..."):
+            build_submittal(
+                pdf_paths=pdf_paths,
+                output_path=output_path,
+            )
+
+        st.success(f"Submittal created: {output_path}")

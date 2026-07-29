@@ -17,11 +17,8 @@ def build_catalog(root: Path) -> list[dict[str, str]]:
     return catalog
 
 
-def load_catalog(root_path: str) -> list[dict[str, str]]:
-    
-    root = Path(root_path)
+def load_catalog(root_path: Path) -> list[dict[str, str]]:
+    if not root_path.exists():
+        raise FileNotFoundError(f"Product library not found: {root_path.resolve()}")
 
-    if not root.exists():
-        raise FileNotFoundError(f"Product library not found: {root.resolve()}")
-
-    return build_catalog(root)
+    return build_catalog(root_path)
