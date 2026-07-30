@@ -4,6 +4,11 @@ from validator import validate_paths
 from reconciler import reconcile_invalid_paths
 
 
+def deduplicate_paths(paths: list[str]) -> list[str]:
+
+    return list(dict.fromkeys(paths))
+
+
 def validate_and_reconcile_paths(
     *,
     client,
@@ -69,6 +74,8 @@ def validate_and_reconcile_paths(
             corrected_invalid.extend(unresolved_paths)
 
         invalid_paths = corrected_invalid
+
+    valid_paths = deduplicate_paths(valid_paths)
 
     if invalid_paths:
         st.error(

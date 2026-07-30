@@ -1,43 +1,54 @@
-def build_product_selection_prompt(catalog_json: str) -> str:
+def build_product_selection_prompt(
+    catalog_json: str,
+    aliases_json: str,
+    ) -> str:
     return f"""
             You select product data sheets for commercial roofing submittals.
 
-            You may select documents ONLY from the catalog provided below.
+            You may select documents only from this catalog:
 
-            CATALOG:
             {catalog_json}
 
-            STRICT SELECTION RULES:
-            - Every returned path must exactly match an existing catalog path.
-            - Copy each path verbatim from the catalog.
-            - Never invent, reconstruct, shorten, rename, normalize, or modify a catalog path.
-            - Never construct a path from information in the uploaded documents.
-            - If a product appears in the uploaded documents but no corresponding catalog path exists, omit it.
-            - If you are uncertain which catalog path applies, omit the product rather than guessing.
-            - Before returning your response, verify that every returned path exists exactly in the catalog.
+            PRODUCT ALIASES:
 
-            PRODUCT MATCHING RULES:
-            - Do not infer or approximate products. Select a catalog path only when there is sufficient evidence that it is the correct product.
-            - Different sizes or lengths of the same product require only one PDS.
-            - Example: #14 fasteners may correspond to an All-Purpose Fastener PDS.
-            - Select only products supported by the uploaded material list or scope of work.
+            {aliases_json}
 
-            MATERIAL COMPLETENESS RULES:
-            - Treat every line item whose unit is HOURS as labor, not material, and do not select a PDS for it.
-            - Units other than HOURS are not automatically materials. Continue to apply all exclusions.
-            - Consolidate different sizes, lengths, quantities, and aliases of the same product when they use the same PDS.
-            - Select exactly one catalog path for every distinct included roofing material.
-            - Sealants, caulks, mastics, cleaners, adhesives, primers, and water cut-off products are roofing materials and should be included when listed and when a corresponding catalog path exists.
-            - Before returning your response, verify that every distinct included roofing material has one corresponding selected catalog path and that no included product has been omitted.
+            Alias instructions:
+            - Use the aliases only to interpret product terminology found in the uploaded files.
+            - Each dictionary key is the canonical product name.
+            - Each value contains alternate names that may appear in the material list or scope.
+            - When an alias appears, treat it as the corresponding canonical product.
+            - After identifying the product, select the exact matching document path from the catalog.
+            - Never return an alias as the document path.
+            - Never return the canonical product name as the document path unless it is itself an exact catalog path.
+            - Every returned path must be copied exactly from the catalog.
 
-            ALLOWED FOLDERS:
-            - membrane
-            - accessories
-            - adhesives
-            - fasteners_and_plates
-            - insulation_and_coverboards
+            Selection rules:
+            - Do not select any template documents, cover pages, sample warranties, certified applicator letters, dividers, or other submittal template components.
+            - Return the exact path from the catalog.
+            - Copy every path verbatim.
+            - Never invent, modify, normalize, shorten, or reconstruct a path.
+            - If no catalog document clearly matches a product, omit it.
+            - Verify that every returned path exists in the catalog before responding.
 
-            EXCLUSIONS:
+            Product matching:
+            - Do not infer or approximate unsupported products.
+            - Different sizes or lengths of the same product require only one product data sheet.
+            - Include one catalog document for each distinct roofing product found in the uploaded files.
+
+            Material completeness:
+            - Review both uploaded files completely.
+            - Ignore labor hours and quantities.
+            - Consolidate aliases, sizes, and lengths into one product selection.
+            - Include applicable sealants, cleaners, primers, adhesives, fasteners, plates,
+            insulation, cover boards, membranes, and accessories.
+            - Verify that no included roofing product has been omitted.
+
+            Exclusions:
+            - 1-1/2" Fastener w/Neoprene Washer @250/Box
+            - 1-1/4" Fastener w/Neoprene Washer @250/Box
+            - ancillary items
+            - Skirt Flashings
             - Roof hatches
             - Ladders and safety bars
             - Coping
@@ -46,5 +57,5 @@ def build_product_selection_prompt(catalog_json: str) -> str:
             - Labor
             - Freight
             - Quantities
-            - Equipment unrelated to the membrane roofing system
+            - Equipment unrelated to the roofing system
             """

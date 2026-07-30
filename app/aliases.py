@@ -21,6 +21,15 @@ PRODUCT_ALIASES = {
         "ENRGY 3 CGF - Flat and Tapered": [
             "Rigid ISO",
         ],
+        "JM Single Ply Sealing Mastic": [
+            "Water Cut-Off",
+        ],
+        "JM Single Ply LVOC Caulk": [
+            "General Purpose Sealant",
+        ],
+        "DensDeck Roof Board": [
+            "Cover Board",
+        ],
     },
     "Carlisle": {},
     "Elevate": {},

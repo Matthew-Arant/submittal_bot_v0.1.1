@@ -1,7 +1,10 @@
+import json
+
 from openai import OpenAI
 
 from models import SubmittalSelection
 from prompts import build_product_selection_prompt
+from aliases import PRODUCT_ALIASES
 
 
 def select_submittal_documents(
@@ -11,7 +14,14 @@ def select_submittal_documents(
         catalog_json: str,
         brand: str,
 ) -> SubmittalSelection:
-    prompt = build_product_selection_prompt(catalog_json)
+
+    brand_aliases = PRODUCT_ALIASES.get(brand, {})
+    aliases_json = json.dumps(brand_aliases)
+
+    prompt = build_product_selection_prompt(
+        catalog_json,
+        aliases_json,
+    )
 
     response = client.responses.parse(
         model="gpt-5.6-luna",

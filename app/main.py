@@ -11,6 +11,7 @@ from product_catalog import load_catalog
 from selection_processor import validate_and_reconcile_paths
 from builder import build_submittal
 from ai_selector import select_submittal_documents
+from roofing_system import identify_roofing_system
 
 app_directory = Path(__file__).resolve().parent
 product_library_root = app_directory.parent / "product_library"
@@ -20,10 +21,6 @@ templates_root = app_directory.parent / "templates"
 @st.cache_data
 def get_catalog():
     return load_catalog(product_library_root)
-
-
-catalog = get_catalog()
-catalog_json = json.dumps(catalog, indent=2)
 
 
 load_dotenv()
@@ -69,6 +66,20 @@ if submit:
                 purpose="user_data",
             )
 
+            roofing_system = identify_roofing_system(
+                client=client,
+                material_file_id=material_file.id,
+                scope_file_id=scope_file.id,
+                brand=brand,
+            )
+
+            catalog = load_catalog(
+                product_library_root 
+                / brand.lower() 
+                / roofing_system.roofing_system.lower()
+            )
+            catalog_json = json.dumps(catalog, indent=2)
+
             result = select_submittal_documents(
                 client=client,
                 material_file_id=material_file.id,
@@ -99,8 +110,14 @@ if submit:
 
         validation_spinner.empty()
 
+        library_root = (
+            product_library_root 
+            / brand.lower() 
+            / roofing_system.roofing_system.lower()
+        )
+
         for path in valid_paths:
-            pdf_path = product_library_root / path
+            pdf_path = library_root / path
 
             if pdf_path.is_file():
                 pdf_paths.append(pdf_path)
