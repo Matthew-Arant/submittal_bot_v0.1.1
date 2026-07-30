@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from product_catalog import load_catalog
-from models import SubmittalSelection
 from selection_processor import validate_and_reconcile_paths
 from builder import build_submittal
+from ai_selector import select_submittal_documents
 
 app_directory = Path(__file__).resolve().parent
 product_library_root = app_directory.parent / "product_library"
@@ -69,54 +69,14 @@ if submit:
                 purpose="user_data",
             )
 
-            response = client.responses.parse(
-                model="gpt-5.6",
-                input=[
-                    {
-                        "role": "developer",
-                        "content": f"""
-
-                        You select product data sheets for commercial roofing submittals.
-
-                        You may select documents ONLY from this catalog:
-
-                        {catalog_json}
-
-                        Rules:
-                        - Return the exact filename and folder from the catalog.
-                        - Never invent, shorten, or modify a filename.
-                        - Every selected document must come from one of these folders:
-                        membrane, accessories, adhesives, fasteners_and_plates,
-                        insulation_and_coverboards.
-                        - Match aliases and descriptions from the uploaded documents to the closest
-                        applicable product in the catalog.
-                        - Different sizes or lengths of the same product require only one PDS.
-                        - Example: #14 fasteners may correspond to an All-Purpose Fastener PDS.
-                        - Exclude roof hatches, ladders and safety bars, coping, scuppers,
-                        unrelated sheet metal, labor, freight, quantities, and equipment
-                        unrelated to the membrane roofing system.
-                        - Select only products supported by the uploaded material list or scope of work.
-                        """,
-                    },
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "input_file", "file_id": material_file.id},
-                            {"type": "input_file", "file_id": scope_file.id},
-                            {
-                                "type": "input_text",
-                                "text": (
-                                    "Identify the PDS documents needed for this roofing submittal."
-                                    f"The selected manufacturer is {brand}."
-                                ),
-                            },
-                        ],
-                    },
-                ],
-                text_format=SubmittalSelection,
+            result = select_submittal_documents(
+                client=client,
+                material_file_id=material_file.id,
+                scope_file_id=scope_file.id,
+                catalog_json=catalog_json,
+                brand=brand,
             )
 
-        result = response.output_parsed
         # st.json(result.model_dump()) - for test
         catalog_paths = {item["path"] for item in catalog}
         selected_paths = [document.path for document in result.documents]
