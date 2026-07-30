@@ -27,6 +27,9 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+APP_VERSION = "0.1.3-system-catalog"
+st.caption(f"App version: {APP_VERSION}")
+
 st.title("Roofing Submittal Builder")
 
 form = st.form("submittal_form")
