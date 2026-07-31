@@ -30,11 +30,15 @@ PRODUCT_ALIASES = {
         "DensDeck Roof Board": [
             "Cover Board",
         ],
-        "ENRGY 3 Flat and Tapered":[
+        "ENRGY 3 Flat and Tapered": [
             "ENRGY 3 Filler",
             "JM Tapered ENERGY 3 'Q'",
             "ENRGY 3",
-        ]
+            "Q Panel",
+        ],
+        "UltraFast Plates": [
+            "Insulation Fastening Plates",
+        ],
     },
     "Carlisle": {},
     "Elevate": {},
