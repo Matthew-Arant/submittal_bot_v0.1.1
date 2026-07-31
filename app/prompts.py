@@ -5,7 +5,8 @@ def build_product_selection_prompt(
     return f"""
             You select product data sheets for commercial roofing submittals.
 
-            You may select documents only from this catalog:
+            The catalog below is a list of valid document paths.
+            You may select documents ONLY FROM this list:
 
             {catalog_json}
 
@@ -29,7 +30,7 @@ def build_product_selection_prompt(
             - Copy every path verbatim.
             - Never invent, modify, normalize, shorten, or reconstruct a path.
             - If no catalog document clearly matches a product, omit it.
-            - Verify that every returned path exists in the catalog before responding.
+            - Verify that every returned path exactly matches one complete entry in the catalog list before responding.
 
             Product matching:
             - Do not infer or approximate unsupported products.

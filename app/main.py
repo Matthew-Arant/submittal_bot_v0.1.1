@@ -6,6 +6,7 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
+from subprocess import check_output
 
 from product_catalog import load_catalog
 from selection_processor import validate_and_reconcile_paths
@@ -18,21 +19,28 @@ product_library_root = app_directory.parent / "product_library"
 templates_root = app_directory.parent / "templates"
 
 
-@st.cache_data
-def get_catalog():
-    return load_catalog(product_library_root)
-
-
 load_dotenv()
+
+def get_version():
+    try:
+        return check_output(
+            ["git", "describe", "--tags", "--always"],
+            text=True,
+        ).strip()
+    except Exception:
+        return "Development"
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-APP_VERSION = "0.1.3-system-catalog"
+APP_VERSION = get_version()
 st.caption(f"App version: {APP_VERSION}")
 
 st.title("Roofing Submittal Builder")
 
-form = st.form("submittal_form")
+form = st.form(
+    "submittal_form",
+    clear_on_submit=True,
+)
 
 material = form.file_uploader("Material List")
 scope = form.file_uploader("Scope of Work")
@@ -81,7 +89,16 @@ if submit:
                 / brand.lower() 
                 / roofing_system.roofing_system.lower()
             )
-            catalog_json = json.dumps(catalog, indent=2)
+
+            catalog_path_list = [
+                item["path"]
+                for item in catalog
+            ]
+
+            catalog_json = json.dumps(
+                catalog_path_list, 
+                indent=2,
+            )
 
             result = select_submittal_documents(
                 client=client,
@@ -92,7 +109,7 @@ if submit:
             )
 
         # st.json(result.model_dump()) - for test
-        catalog_paths = {item["path"] for item in catalog}
+        catalog_paths = set(catalog_path_list)
         selected_paths = [document.path for document in result.documents]
 
         pdf_paths = []
