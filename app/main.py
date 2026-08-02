@@ -33,7 +33,7 @@ def get_version():
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 APP_VERSION = get_version()
-st.caption(f"App version: {APP_VERSION}")
+st.caption(f"App version: {APP_VERSION} - Pre-release")
 
 st.title("Roofing Submittal Builder")
 

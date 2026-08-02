@@ -59,4 +59,7 @@ def build_product_selection_prompt(
             - Freight
             - Quantities
             - Equipment unrelated to the roofing system
+
+            Notes:
+            - Our company pretty much exclusively uses universal inside/outside corners for all manufacturers. Select universal corners unless otherwise specefied.
             """
