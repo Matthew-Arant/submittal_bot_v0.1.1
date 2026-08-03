@@ -48,6 +48,9 @@ PRODUCT_ALIASES = {
         "insul_fast_fastener": [
             "Insulation Fasteners @ 1000/Box",
         ],
+        "sure_weld_tpo_non_reinforced_flashing": [
+            "Detail Membrane",
+        ],
     },
     "Elevate": {},
     "GAF": {},
