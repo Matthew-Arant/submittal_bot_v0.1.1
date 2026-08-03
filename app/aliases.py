@@ -40,7 +40,15 @@ PRODUCT_ALIASES = {
             "Insulation Fastening Plates",
         ],
     },
-    "Carlisle": {},
+    "Carlisle": {
+        "hd_1410_fastener": [
+            "Heavy Duty Fastener @ 500/Box",
+            "Heavy Duty Fastener @ 1000/Box",
+        ],
+        "insul_fast_fastener": [
+            "Insulation Fasteners @ 1000/Box",
+        ],
+    },
     "Elevate": {},
     "GAF": {},
 }
