@@ -41,6 +41,8 @@ PRODUCT_ALIASES = {
         ],
     },
     "Carlisle": {
+        "flexible_fast_dual_tank_adhesive_formula": [
+            "Low Rise Foam Adhesive 15# A/B Kit ",
         "hd_1410_fastener": [
             "Heavy Duty Fastener @ 500/Box",
             "Heavy Duty Fastener @ 1000/Box",
