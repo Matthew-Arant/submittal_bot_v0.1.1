@@ -40,7 +40,11 @@ PRODUCT_ALIASES = {
             "Insulation Fastening Plates",
         ],
     },
-    "Carlisle": {},
+    "Carlisle": {
+        "flexible_fast_dual_tank_adhesive_formula": [
+            "Low Rise Foam Adhesive 15# A/B Kit ",
+        ],
+    },
     "Elevate": {},
     "GAF": {},
 }

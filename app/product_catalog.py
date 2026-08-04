@@ -1,24 +1,57 @@
-from pathlib import Path
+from pathlib import PurePosixPath
+
+from gcs_storage import build_library_prefix, list_product_blobs
 
 
-def build_catalog(root: Path) -> list[dict[str, str]]:
-    
+def build_catalog(
+    brand: str,
+    roofing_system: str,
+) -> list[dict[str, str]]:
+
+    prefix = build_library_prefix(
+        brand=brand,
+        roofing_system=roofing_system,
+    )
+
+    blobs = list_product_blobs(
+        brand=brand,
+        roofing_system=roofing_system,
+    )
+
     catalog: list[dict[str, str]] = []
 
-    for pdf in root.rglob("*.pdf"):
+    for blob in blobs:
+        if not blob.name.lower().endswith(".pdf"):
+            continue
+
+        relative_path = blob.name.removeprefix(prefix)
+        path = PurePosixPath(relative_path)
+
         catalog.append(
             {
-                "folder": pdf.parent.name,
-                "filename": pdf.name,
-                "path": str(pdf.relative_to(root)),
+                "folder": path.parent.name,
+                "filename": path.name,
+                "path": relative_path,
             }
         )
 
     return catalog
 
 
-def load_catalog(root_path: Path) -> list[dict[str, str]]:
-    if not root_path.exists():
-        raise FileNotFoundError(f"Product library not found: {root_path.resolve()}")
+def load_catalog(
+    brand: str,
+    roofing_system: str,
+) -> list[dict[str, str]]:
 
-    return build_catalog(root_path)
+    catalog = build_catalog(
+        brand=brand,
+        roofing_system=roofing_system,
+    )
+
+    if not catalog:
+        raise FileNotFoundError(
+            "No product PDFs found in GCS for "
+            f"{brand}/{roofing_system}."
+        )
+
+    return catalog

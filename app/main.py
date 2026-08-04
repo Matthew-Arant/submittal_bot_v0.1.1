@@ -13,9 +13,9 @@ from selection_processor import validate_and_reconcile_paths
 from builder import build_submittal
 from ai_selector import select_submittal_documents
 from roofing_system import identify_roofing_system
+from gcs_storage import download_product_pdfs
 
 app_directory = Path(__file__).resolve().parent
-product_library_root = app_directory.parent / "product_library"
 templates_root = app_directory.parent / "templates"
 
 
@@ -85,9 +85,8 @@ if submit:
             )
 
             catalog = load_catalog(
-                product_library_root 
-                / brand.lower() 
-                / roofing_system.roofing_system.lower()
+                brand=brand,
+                roofing_system=roofing_system.roofing_system,
             )
 
             catalog_path_list = [
@@ -112,8 +111,6 @@ if submit:
         catalog_paths = set(catalog_path_list)
         selected_paths = [document.path for document in result.documents]
 
-        pdf_paths = []
-
         validation_spinner = st.empty()
 
         with st.spinner("Validating selections..."):
@@ -130,19 +127,8 @@ if submit:
 
         validation_spinner.empty()
 
-        library_root = (
-            product_library_root 
-            / brand.lower() 
-            / roofing_system.roofing_system.lower()
-        )
-
-        for path in valid_paths:
-            pdf_path = library_root / path
-
-            if pdf_path.is_file():
-                pdf_paths.append(pdf_path)
-            else:
-                st.error(f"Missing file: {pdf_path}")
+        if invalid_paths:
+            st.stop()
 
         if not submittal_name.strip():
             submittal_name = "Roofing Submittal"
@@ -150,33 +136,41 @@ if submit:
         if not submittal_name.lower().endswith(".pdf"):
             submittal_name += ".pdf"
 
-        temp_file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-        output_path = Path(temp_file.name)
-        temp_file.close()
+        template_path = (
+            templates_root
+            / brand.lower()
+            / "submittal_template.pdf"
+        )
 
-        with st.spinner("Building submittal..."):
+        if not template_path.is_file():
+            st.error(f"Missing template: {template_path}")
+            st.stop()
 
+        with tempfile.TemporaryDirectory() as temp_directory:
+            temp_root = Path(temp_directory)
 
-            template_path = (
-                templates_root 
-                / brand.lower()
-                / "submittal_template.pdf"
-            )
+            with st.spinner("Downloading selected product documents..."):
+                try:
+                    pdf_paths = download_product_pdfs(
+                        brand=brand,
+                        roofing_system=roofing_system.roofing_system,
+                        selected_paths=valid_paths,
+                        destination_root=temp_root / "product_documents",
+                    )
+                except FileNotFoundError as error:
+                    st.error(str(error))
+                    st.stop()
 
-            if not template_path.is_file():
-                st.error(f"Missing template: {template_path}")
-                st.stop()
+            output_path = temp_root / "finished_submittal.pdf"
 
-            build_submittal(
-                pdf_paths=pdf_paths,
-                template_path=template_path,
-                output_path=output_path,
-            )
+            with st.spinner("Building submittal..."):
+                build_submittal(
+                    pdf_paths=pdf_paths,
+                    template_path=template_path,
+                    output_path=output_path,
+                )
 
-        with open(output_path, "rb") as finished_pdf:
-            pdf_data = finished_pdf.read()
-
-        output_path.unlink()
+            pdf_data = output_path.read_bytes()
 
         st.success("Submittal created successfully!")
 
