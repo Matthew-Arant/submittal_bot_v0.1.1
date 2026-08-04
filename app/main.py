@@ -30,7 +30,7 @@ def get_version():
     except Exception:
         return "Development"
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 APP_VERSION = get_version()
 st.caption(f"App version: {APP_VERSION} - Pre-release")
